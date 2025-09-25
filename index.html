@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>管端切断寸法・角度計算ツール</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1em;
+      max-width: 500px;
+      margin: auto;
+      background: #f5f5f5;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 0.5em;
+    }
+    label {
+      display: block;
+      margin-top: 0.5em;
+    }
+    input {
+      width: 100%;
+      padding: 0.3em;
+      margin-top: 0.2em;
+    }
+    button {
+      margin-top: 1em;
+      width: 100%;
+      padding: 0.6em;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1em;
+    }
+    .result {
+      margin-top: 1em;
+      padding: 1em;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.1);
+    }
+    .flow {
+      margin-top: 2em;
+      padding: 1em;
+      background: #fff;
+      border-radius: 6px;
+      font-size: 0.9em;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <h2>管端切断寸法・角度計算ツール</h2>
+
+  <label>X (12時): <input id="X" type="number" step="0.01"></label>
+  <label>X' (6時): <input id="Xp" type="number" step="0.01"></label>
+  <label>Y (9時): <input id="Y" type="number" step="0.01"></label>
+  <label>Y' (3時): <input id="Yp" type="number" step="0.01"></label>
+  <label>外径 D: <input id="D" type="number" step="0.01"></label>
+
+  <button onclick="calc()">計算</button>
+
+  <div class="result" id="result"></div>
+
+  <div class="flow">
+    <b>作業フロー</b><br>
+    ① 向かい合わせ →  
+    ② 寸法測定 →  
+    ③ 管端切断寸法計算 →  
+    ④ 切合せ角度確認 →  
+    ⑤ 開先加工 →  
+    ⑥ 溶接
+  </div>
+
+  <script>
+    function calc() {
+      const X = parseFloat(document.getElementById("X").value);
+      const Xp = parseFloat(document.getElementById("Xp").value);
+      const Y = parseFloat(document.getElementById("Y").value);
+      const Yp = parseFloat(document.getElementById("Yp").value);
+      const D = parseFloat(document.getElementById("D").value);
+
+      if (isNaN(X) || isNaN(Xp) || isNaN(Y) || isNaN(Yp) || isNaN(D) || D === 0) {
+        document.getElementById("result").innerHTML = "<b>⚠️ 入力値を確認してください</b>";
+        return;
+      }
+
+      // 切断寸法
+      const h12 = Math.abs(Y - Yp) / 2 + X;
+      const h6  = Math.abs(Y - Yp) / 2 + Xp;
+      const h3  = Math.abs(X - Xp) / 2 + Yp;
+      const h9  = Math.abs(X - Xp) / 2 + Y;
+
+      // 角度
+      const V = Math.atan(Math.abs(X - Xp) / D);
+      const H = Math.atan(Math.abs(Y - Yp) / D);
+
+      // θ 計算
+      const tanH = Math.tan(H);
+      const tanV = Math.tan(V);
+      const theta = Math.atan(Math.sqrt(tanH**2 + (tanV**2)/(Math.cos(H)**2)));
+
+      document.getElementById("result").innerHTML = `
+        <b>切断寸法</b><br>
+        12h' = ${h12.toFixed(3)}<br>
+        6h'  = ${h6.toFixed(3)}<br>
+        3h'  = ${h3.toFixed(3)}<br>
+        9h'  = ${h9.toFixed(3)}<br><br>
+        <b>角度</b><br>
+        V = ${ (V*180/Math.PI).toFixed(2) }°<br>
+        H = ${ (H*180/Math.PI).toFixed(2) }°<br><br>
+        <b>θ</b><br>
+        θ = ${ (theta*180/Math.PI).toFixed(2) }°
+      `;
+    }
+  </script>
+</body>
+</html>
