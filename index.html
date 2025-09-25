@@ -94,8 +94,8 @@
       const h9  = Math.abs(X - Xp) / 2 + Y;
 
       // 角度
-      const V = Math.atan(Math.abs(X - Xp) / D);
-      const H = Math.atan(Math.abs(Y - Yp) / D);
+      const V = Math.atan2(X - Xp, D);
+      const H = Math.atan2(Y - Yp, D);
 
       // θ 計算
       const tanH = Math.tan(H);
