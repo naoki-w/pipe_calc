@@ -3,64 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <title>管端切断寸法・角度計算ツール</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family: sans-serif;
+      font-family: "Segoe UI", sans-serif;
       padding: 1em;
-      max-width: 500px;
+      max-width: 600px;
       margin: auto;
-      background: #f5f5f5;
+      background: #f0f2f5;
     }
     h2 {
       text-align: center;
-      margin-bottom: 0.5em;
+      margin-bottom: 1em;
+      color: #333;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 1em;
+      margin-bottom: 1em;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
     label {
       display: block;
-      margin-top: 0.5em;
+      margin-top: 0.8em;
+      font-weight: bold;
     }
     input {
       width: 100%;
-      padding: 0.3em;
-      margin-top: 0.2em;
+      padding: 0.5em;
+      margin-top: 0.3em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1em;
     }
     button {
       margin-top: 1em;
       width: 100%;
-      padding: 0.6em;
+      padding: 0.8em;
       background: #007bff;
       color: white;
       border: none;
-      border-radius: 4px;
-      font-size: 1em;
+      border-radius: 6px;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:active {
+      background: #0056b3;
     }
     .result {
       margin-top: 1em;
       padding: 1em;
       background: white;
-      border-radius: 6px;
-      box-shadow: 0 0 4px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .result table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .result th, .result td {
+      border-bottom: 1px solid #ddd;
+      padding: 0.6em;
+      text-align: left;
     }
     .flow {
       margin-top: 2em;
       padding: 1em;
       background: #fff;
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 0.9em;
       line-height: 1.6;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
   </style>
 </head>
 <body>
   <h2>管端切断寸法・角度計算ツール</h2>
 
-  <label>X (12時): <input id="X" type="number" step="0.01"></label>
-  <label>X' (6時): <input id="Xp" type="number" step="0.01"></label>
-  <label>Y (9時): <input id="Y" type="number" step="0.01"></label>
-  <label>Y' (3時): <input id="Yp" type="number" step="0.01"></label>
-  <label>外径 D: <input id="D" type="number" step="0.01"></label>
-
-  <button onclick="calc()">計算</button>
+  <div class="card">
+    <label>X (12時): <input id="X" type="number" step="0.01"></label>
+    <label>X' (6時): <input id="Xp" type="number" step="0.01"></label>
+    <label>Y (9時): <input id="Y" type="number" step="0.01"></label>
+    <label>Y' (3時): <input id="Yp" type="number" step="0.01"></label>
+    <label>外径 D: <input id="D" type="number" step="0.01"></label>
+    <button onclick="calc()">計算</button>
+  </div>
 
   <div class="result" id="result"></div>
 
@@ -74,7 +103,29 @@
     ⑥ 溶接
   </div>
 
+<div class="flow">
+    <b>外径（参考）</b><br>
+    100A：114.3 ,
+    150A：165.2 ,
+    200A：216.3 ,     
+    250A：267.4 ,
+    300A：318.5 ,
+    350A：355.6 ,
+    400A：406.4 ,
+    450A：457.2 ,
+    500A：508.0
+  </div>
+
   <script>
+    function cutAtAngle(angleDeg, h12, h3, h6, h9) {
+      // Fit h(phi) = A + B*cos(phi) + C*sin(phi) using the four cardinal values
+      // h(0)=h12, h(90)=h3, h(180)=h6, h(270)=h9
+      const A = (h12 + h6) / 2;
+      const B = (h12 - h6) / 2;
+      const C = (h3 - h9) / 2;
+      const rad = (angleDeg % 360) * Math.PI / 180;
+      return A + B * Math.cos(rad) + C * Math.sin(rad);
+    }
     function calc() {
       const X = parseFloat(document.getElementById("X").value);
       const Xp = parseFloat(document.getElementById("Xp").value);
@@ -95,24 +146,34 @@
 
       // 角度
       const V = Math.atan2(X - Xp, D);
-      const H = Math.atan2(Y - Yp, D);
+      const H = Math.atan2(Yp - Y, D);
 
       // θ 計算
       const tanH = Math.tan(H);
       const tanV = Math.tan(V);
       const theta = Math.atan(Math.sqrt(tanH**2 + (tanV**2)/(Math.cos(H)**2)));
 
+      const dx = Math.tan(H);
+      const dy = Math.tan(V);
+      let angleRad = Math.atan2(dx, dy);
+      let angleDeg = (angleRad * 180 / Math.PI + 360) % 360;
+
+      const hTheta = cutAtAngle(angleDeg, h12, h3, h6, h9);
+
       document.getElementById("result").innerHTML = `
-        <b>切断寸法</b><br>
-        12h' = ${h12.toFixed(3)}<br>
-        6h'  = ${h6.toFixed(3)}<br>
-        3h'  = ${h3.toFixed(3)}<br>
-        9h'  = ${h9.toFixed(3)}<br><br>
-        <b>角度</b><br>
-        V = ${ (V*180/Math.PI).toFixed(2) }°<br>
-        H = ${ (H*180/Math.PI).toFixed(2) }°<br><br>
-        <b>合成角θ</b><br>
-        θ = ${ (theta*180/Math.PI).toFixed(2) }°
+        <table>
+          <tr><th colspan="2">切断寸法</th></tr>
+          <tr><td>12h'</td><td>${h12.toFixed(3)}</td></tr>
+          <tr><td>6h'</td><td>${h6.toFixed(3)}</td></tr>
+          <tr><td>3h'</td><td>${h3.toFixed(3)}</td></tr>
+          <tr><td>9h'</td><td>${h9.toFixed(3)}</td></tr>
+          <tr><th colspan="2">角度</th></tr>
+          <tr><td>V</td><td>${ (V*180/Math.PI).toFixed(2) }°</td></tr>
+          <tr><td>H</td><td>${ (H*180/Math.PI).toFixed(2) }°</td></tr>
+          <tr><td>合成角θ（大きさ）</td><td>${(theta*180/Math.PI).toFixed(2)}°</td></tr>
+          <tr><td>合成角θ（方向）</td><td>${angleDeg.toFixed(2)}° （${(angleDeg/30).toFixed(1)}時方向）</td></tr>
+          <tr><td>合成角θ（方向の切断寸法）</td><td>${hTheta.toFixed(3)}</td></tr>
+        </table>
       `;
     }
   </script>
